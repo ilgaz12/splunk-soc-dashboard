@@ -1,0 +1,196 @@
+<dashboard version="1.1" theme="dark">
+  <label>Comprehensive SOC Monitoring Dashboard</label>
+  <description>
+    Combines Windows Security Event Analysis, Logon Monitoring, and System Health Metrics (CPU &amp; Memory).
+  </description>
+
+  <!-- Time Picker -->
+  <row>
+    <panel>
+      <input type="time" token="time">
+        <label>Select Time Range</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+    </panel>
+  </row>
+
+  <!-- Security Panels -->
+  <row>
+    <panel>
+      <title>Event Type Breakdown</title>
+      <chart>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode IN (4624,4625,4634,4672)
+            | eval EventDescription=case(
+                EventCode=4624,"Successful Logon",
+                EventCode=4625,"Failed Logon",
+                EventCode=4634,"Logoff",
+                EventCode=4672,"Privileged Logon")
+            | stats count by EventDescription
+            | sort - count
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Privileged Logons</title>
+      <single>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode=4672
+            | stats count as PrivilegedLogons
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="unit">Events</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Top Users (Failed Logons)</title>
+      <chart>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode=4625
+            | stats count by Account_Name
+            | sort - count
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Top Source IPs (Failed Logons)</title>
+      <chart>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode=4625
+            | stats count by Source_Network_Address
+            | sort - count
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Event Trend Over Time</title>
+      <chart>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode IN (4624,4625,4634,4672)
+            | eval EventDescription=case(
+                EventCode=4624,"Successful Logon",
+                EventCode=4625,"Failed Logon",
+                EventCode=4634,"Logoff",
+                EventCode=4672,"Privileged Logon")
+            | timechart span=10m count by EventDescription
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- Extra Security Panel: Top Security Events -->
+  <row>
+    <panel>
+      <title>Top Security Events (Logon Activity)</title>
+      <chart>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:Security EventCode IN (4624,4672)
+            | eval EventDescription=case(
+                EventCode=4624,"Successful Logon",
+                EventCode=4672,"Admin Privileges Granted")
+            | stats count by EventDescription
+            | sort - count
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- Windows Event Logs Overview Table -->
+  <row>
+    <panel>
+      <title>Windows Event Logs Overview</title>
+      <table>
+        <search>
+          <query>
+            index=* sourcetype=WinEventLog:* 
+            | stats count by sourcetype, EventCode
+            | sort - count
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+
+  <!-- System Health Panels -->
+  <row>
+    <panel>
+      <title>CPU Usage Over Time</title>
+      <chart>
+        <search>
+          <query>
+            index=perfmon sourcetype=Perfmon:CPU
+            | timechart span=5m avg(Value) as "Average CPU %"
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Memory Usage Over Time</title>
+      <chart>
+        <search>
+          <query>
+            index=perfmon sourcetype=Perfmon:Memory
+            | timechart span=5m avg(Value) as "Memory Usage (MB)"
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">area</option>
+      </chart>
+    </panel>
+  </row>
+
+</dashboard>
