@@ -129,9 +129,9 @@ sc config SplunkForwarder start= auto
 
 ```
 splunk-soc-dashboard/
-├── README.md                    # This file
-├── splunk-soc-dashboard.xml     # (Add your dashboard XML here)
-└── screenshots/                 # Optional: dashboard images
+├── README.md                    
+├── splunk-soc-dashboard.xml     
+└── screenshots/                 
 ```
 
 ---
